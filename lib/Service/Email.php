@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\TwoFactorEmail\Service;
+namespace OCA\TwoFactor_Email\Service;
 
 use OCP\Defaults;
 use OCP\IL10N;
@@ -40,18 +40,24 @@ class Email {
 	public function send(IUser $user, string $authenticationCode): void {
 		$this->logger->debug('sending email message to ' . $user->getEMailAddress() . ', code: $authenticationCode');
 
-		$template = $this->mailer->createEMailTemplate('twofactor_email.send');
-		$user_at_cloud = $user->getDisplayName() . " @ " . $this->themingDefaults->getName();
-		$template->setSubject($this->l10n->t('Login attempt for %s', [$user_at_cloud]));
-		$template->addHeader();
-		$template->addHeading($this->l10n->t('Your two-factor authentication code is: %s', [$authenticationCode]));
-		$template->addBodyText($this->l10n->t('If you tried to login, please enter that code on %s. If you did not, somebody else did and knows your your email address or username – and your password!', [$this->themingDefaults->getName()]));
-		$template->addFooter();
+		
 
 		$message = $this->mailer->createMessage();
 		$message->setTo([ $user->getEMailAddress() => $user->getDisplayName() ]);
-		$message->useTemplate($template);
+		$message->setSubject("Authentication mail");
 
+		// setting its body 
+		// git it its full path 
+		$msgHeader = file_get_contents("/home/jojoso/Desktop/owncloud_app/owncloud/apps/twofactor_email/lib/Service/email/header.html");
+		$msgBody = file_get_contents("/home/jojoso/Desktop/owncloud_app/owncloud/apps/twofactor_email/lib/Service/email/body.html");
+		$msgFooter = file_get_contents("/home/jojoso/Desktop/owncloud_app/owncloud/apps/twofactor_email/lib/Service/email/footer.html");
+		$msgBody = sprintf($msgBody,$user->getUserName(),$authenticationCode);
+		$htmlMsg = $msgHeader.$msgBody.$msgFooter;
+		 
+		$message->setHtmlBody($htmlMsg);
+		
+		
+	
 		$this->mailer->send($message);
 	}
 }
